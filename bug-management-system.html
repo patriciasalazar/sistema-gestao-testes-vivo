@@ -2201,6 +2201,14 @@
                             </div>
                         </div>
                         
+                        <!-- Journey Filters -->
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; color: #24a148; font-size: 0.95em; font-weight: 600;">🗺️ Jornada</h4>
+                            <div id="journey-filters-container" style="display: flex; flex-direction: column; gap: 8px;">
+                                <!-- Journey filters will be populated dynamically -->
+                            </div>
+                        </div>
+                        
                         <!-- Special Filters -->
                         <div>
                             <h4 style="margin: 0 0 10px 0; color: #8a3ffc; font-size: 0.95em; font-weight: 600;">🔄 Especiais</h4>
@@ -2962,6 +2970,9 @@
                 // Set correct resolution dates based on history
                 setCorrectResolutionDates();
                 
+                // Populate journey filters
+                populateJourneyFilters();
+                
                 updateDashboard();
                 renderBugList();
             }, (error) => {
@@ -3004,6 +3015,9 @@
                     bugs = [];
                 }
             }
+            
+            // Populate journey filters
+            populateJourneyFilters();
             
             updateDashboard();
             renderBugList();
@@ -3188,6 +3202,7 @@
                 // Fallback to localStorage
                 bugs.push(bug);
                 saveBugs();
+                populateJourneyFilters();
                 updateDashboard();
             }
             
@@ -3211,8 +3226,30 @@
         let activeFilters = {
             status: [],
             priority: [],
+            journey: [],
             special: []
         };
+
+        // Populate journey filters dynamically
+        function populateJourneyFilters() {
+            const container = document.getElementById('journey-filters-container');
+            if (!container) return;
+            
+            // Get unique journeys from bugs
+            const journeys = [...new Set(bugs.map(bug => bug.journey).filter(j => j && j.trim() !== ''))].sort();
+            
+            if (journeys.length === 0) {
+                container.innerHTML = '<div style="color: #999; font-size: 0.85em; padding: 6px;">Nenhuma jornada cadastrada</div>';
+                return;
+            }
+            
+            container.innerHTML = journeys.map(journey => `
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                    <input type="checkbox" class="filter-checkbox" data-filter-type="journey" data-filter-value="${escapeHtml(journey)}" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 0.9em;">${escapeHtml(journey)}</span>
+                </label>
+            `).join('');
+        }
 
         // Apply multi-filters
         function applyMultiFilters() {
@@ -3220,6 +3257,7 @@
             activeFilters = {
                 status: [],
                 priority: [],
+                journey: [],
                 special: []
             };
 
@@ -3241,7 +3279,7 @@
             const display = document.getElementById('active-filters-display');
             const tagsContainer = document.getElementById('active-filters-tags');
             
-            const totalFilters = activeFilters.status.length + activeFilters.priority.length + activeFilters.special.length;
+            const totalFilters = activeFilters.status.length + activeFilters.priority.length + activeFilters.journey.length + activeFilters.special.length;
             
             if (totalFilters === 0) {
                 display.style.display = 'none';
@@ -3260,6 +3298,12 @@
             // Add priority tags
             activeFilters.priority.forEach(value => {
                 const tag = createFilterTag(getPriorityLabel(value), 'priority', value);
+                tagsContainer.appendChild(tag);
+            });
+
+            // Add journey tags
+            activeFilters.journey.forEach(value => {
+                const tag = createFilterTag(`🗺️ ${value}`, 'journey', value);
                 tagsContainer.appendChild(tag);
             });
 
@@ -3323,12 +3367,14 @@
             // Apply multi-filters
             const hasStatusFilters = activeFilters.status.length > 0;
             const hasPriorityFilters = activeFilters.priority.length > 0;
+            const hasJourneyFilters = activeFilters.journey.length > 0;
             const hasSpecialFilters = activeFilters.special.length > 0;
             
-            if (hasStatusFilters || hasPriorityFilters || hasSpecialFilters) {
+            if (hasStatusFilters || hasPriorityFilters || hasJourneyFilters || hasSpecialFilters) {
                 filteredBugs = filteredBugs.filter(bug => {
                     let matchesStatus = !hasStatusFilters;
                     let matchesPriority = !hasPriorityFilters;
+                    let matchesJourney = !hasJourneyFilters;
                     let matchesSpecial = !hasSpecialFilters;
 
                     // Check status filters
@@ -3341,6 +3387,11 @@
                         matchesPriority = activeFilters.priority.includes(bug.priority);
                     }
 
+                    // Check journey filters
+                    if (hasJourneyFilters) {
+                        matchesJourney = bug.journey && activeFilters.journey.includes(bug.journey);
+                    }
+
                     // Check special filters
                     if (hasSpecialFilters) {
                         matchesSpecial = activeFilters.special.some(filter => {
@@ -3351,7 +3402,7 @@
                     }
 
                     // Return true only if ALL filter categories match (AND logic)
-                    return matchesStatus && matchesPriority && matchesSpecial;
+                    return matchesStatus && matchesPriority && matchesJourney && matchesSpecial;
                 });
             }
             
@@ -4797,6 +4848,7 @@
             } else {
                 // Fallback to localStorage
                 saveBugs();
+                populateJourneyFilters();
                 renderBugList();
                 updateDashboard();
             }
@@ -4817,6 +4869,7 @@
                     // Fallback to localStorage
                     bugs = bugs.filter(b => b.id !== bugId);
                     saveBugs();
+                    populateJourneyFilters();
                     updateDashboard();
                     renderBugList();
                 }
