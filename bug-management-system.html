@@ -412,6 +412,22 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
+        /* Inline Edit Form */
+        .inline-edit-form {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .bug-header {
             display: flex;
             justify-content: space-between;
@@ -2121,17 +2137,91 @@
                     >
                 </div>
                 
-                <div class="bug-filters">
-                    <button class="filter-btn active" onclick="filterBugs('all')">Todos</button>
-                    <button class="filter-btn" onclick="filterBugs('open')">Abertos</button>
-                    <button class="filter-btn" onclick="filterBugs('in-progress')">Em Progresso</button>
-                    <button class="filter-btn" onclick="filterBugs('blocked-product')">🚫 Bloqueados</button>
-                    <button class="filter-btn" onclick="filterBugs('testing-vivo')">🧪 Em Testes Vivo</button>
-                    <button class="filter-btn" onclick="filterBugs('resolved')">Resolvidos</button>
-                    <button class="filter-btn" onclick="filterBugs('rejeitado')">❌ Rejeitados</button>
-                    <button class="filter-btn" onclick="filterBugs('retrabalho')">🔄 Retrabalho</button>
-                    <button class="filter-btn" onclick="filterBugs('reteste')">🔄 % Reteste</button>
-                    <button class="filter-btn" onclick="filterBugs('critical')">🔴 Críticos</button>
+                <!-- Multi-Filter System -->
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0; color: #333; font-size: 1.1em;">🔍 Filtros Avançados</h3>
+                        <button onclick="clearAllFilters()" style="background: #f4f4f4; color: #333; border: 1px solid #ddd; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f4f4f4'">
+                            🗑️ Limpar Filtros
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <!-- Status Filters -->
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; color: #0f62fe; font-size: 0.95em; font-weight: 600;">📊 Status</h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="open" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">Abertos</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="in-progress" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">Em Progresso</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="blocked-product" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🚫 Bloqueados</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="testing-vivo" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🧪 Em Testes Vivo</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="resolved" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">Resolvidos</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="rejeitado" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">❌ Rejeitados</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Priority Filters -->
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; color: #da1e28; font-size: 0.95em; font-weight: 600;">⚠️ Prioridade</h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="priority" data-filter-value="critical" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🔴 Crítica</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="priority" data-filter-value="high" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🟠 Alta</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="priority" data-filter-value="medium" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🟡 Média</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="priority" data-filter-value="low" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🟢 Baixa</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Special Filters -->
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; color: #8a3ffc; font-size: 0.95em; font-weight: 600;">🔄 Especiais</h4>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="special" data-filter-value="reopened" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🔄 Reabertos</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" class="filter-checkbox" data-filter-type="special" data-filter-value="rework" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 0.9em;">🔄 Retrabalho</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Filters Display -->
+                    <div id="active-filters-display" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; display: none;">
+                        <div style="font-size: 0.85em; color: #525252; margin-bottom: 8px; font-weight: 600;">Filtros Ativos:</div>
+                        <div id="active-filters-tags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                    </div>
                 </div>
 
                 <div class="bug-list" id="bug-list"></div>
@@ -3107,15 +3197,101 @@
             renderBugList();
         }
 
-        // Filter bugs
+        // Multi-filter system
+        let activeFilters = {
+            status: [],
+            priority: [],
+            special: []
+        };
+
+        // Apply multi-filters
+        function applyMultiFilters() {
+            // Collect all checked filters
+            activeFilters = {
+                status: [],
+                priority: [],
+                special: []
+            };
+
+            document.querySelectorAll('.filter-checkbox:checked').forEach(checkbox => {
+                const type = checkbox.dataset.filterType;
+                const value = checkbox.dataset.filterValue;
+                activeFilters[type].push(value);
+            });
+
+            // Update active filters display
+            updateActiveFiltersDisplay();
+
+            // Render filtered list
+            renderBugList();
+        }
+
+        // Update active filters display
+        function updateActiveFiltersDisplay() {
+            const display = document.getElementById('active-filters-display');
+            const tagsContainer = document.getElementById('active-filters-tags');
+            
+            const totalFilters = activeFilters.status.length + activeFilters.priority.length + activeFilters.special.length;
+            
+            if (totalFilters === 0) {
+                display.style.display = 'none';
+                return;
+            }
+
+            display.style.display = 'block';
+            tagsContainer.innerHTML = '';
+
+            // Add status tags
+            activeFilters.status.forEach(value => {
+                const tag = createFilterTag(getStatusLabel(value), 'status', value);
+                tagsContainer.appendChild(tag);
+            });
+
+            // Add priority tags
+            activeFilters.priority.forEach(value => {
+                const tag = createFilterTag(getPriorityLabel(value), 'priority', value);
+                tagsContainer.appendChild(tag);
+            });
+
+            // Add special tags
+            activeFilters.special.forEach(value => {
+                const label = value === 'reopened' ? '🔄 Reabertos' : '🔄 Retrabalho';
+                const tag = createFilterTag(label, 'special', value);
+                tagsContainer.appendChild(tag);
+            });
+        }
+
+        // Create filter tag
+        function createFilterTag(label, type, value) {
+            const tag = document.createElement('div');
+            tag.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; background: #0f62fe; color: white; padding: 6px 12px; border-radius: 16px; font-size: 0.85em; font-weight: 500;';
+            tag.innerHTML = `
+                <span>${label}</span>
+                <button onclick="removeFilter('${type}', '${value}')" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 1.2em; line-height: 1; font-weight: bold;" title="Remover filtro">×</button>
+            `;
+            return tag;
+        }
+
+        // Remove specific filter
+        function removeFilter(type, value) {
+            const checkbox = document.querySelector(`.filter-checkbox[data-filter-type="${type}"][data-filter-value="${value}"]`);
+            if (checkbox) {
+                checkbox.checked = false;
+                applyMultiFilters();
+            }
+        }
+
+        // Clear all filters
+        function clearAllFilters() {
+            document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            applyMultiFilters();
+        }
+
+        // Legacy filter function (kept for compatibility)
         function filterBugs(filter) {
             currentFilter = filter;
-            
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
             renderBugList();
         }
 
@@ -3127,31 +3303,46 @@
             return div.innerHTML;
         }
 
-        // Render bug list
+        // Render bug list with multi-filter support
         function renderBugList() {
             const bugList = document.getElementById('bug-list');
             const searchTerm = document.getElementById('bug-search')?.value.toLowerCase() || '';
             
             let filteredBugs = bugs;
             
-            // Apply status filter
-            if (currentFilter !== 'all') {
-                if (currentFilter === 'rejeitado') {
-                    // Filter by root cause for "rejeitado"
-                    filteredBugs = filteredBugs.filter(bug => bug.rootCause === 'rejected');
-                } else if (currentFilter === 'retrabalho') {
-                    // Filter by rework flag
-                    filteredBugs = filteredBugs.filter(bug => bug.rework === true);
-                } else if (currentFilter === 'reteste') {
-                    // Filter by reteste (reopened OR rework)
-                    filteredBugs = filteredBugs.filter(bug => bug.reopened === true || bug.rework === true);
-                } else if (currentFilter === 'critical') {
-                    // Filter by critical priority
-                    filteredBugs = filteredBugs.filter(bug => bug.priority === 'critical');
-                } else {
-                    // Filter by status for other filters
-                    filteredBugs = filteredBugs.filter(bug => bug.status === currentFilter);
-                }
+            // Apply multi-filters
+            const hasStatusFilters = activeFilters.status.length > 0;
+            const hasPriorityFilters = activeFilters.priority.length > 0;
+            const hasSpecialFilters = activeFilters.special.length > 0;
+            
+            if (hasStatusFilters || hasPriorityFilters || hasSpecialFilters) {
+                filteredBugs = filteredBugs.filter(bug => {
+                    let matchesStatus = !hasStatusFilters;
+                    let matchesPriority = !hasPriorityFilters;
+                    let matchesSpecial = !hasSpecialFilters;
+
+                    // Check status filters
+                    if (hasStatusFilters) {
+                        matchesStatus = activeFilters.status.includes(bug.status);
+                    }
+
+                    // Check priority filters
+                    if (hasPriorityFilters) {
+                        matchesPriority = activeFilters.priority.includes(bug.priority);
+                    }
+
+                    // Check special filters
+                    if (hasSpecialFilters) {
+                        matchesSpecial = activeFilters.special.some(filter => {
+                            if (filter === 'reopened') return bug.reopened === true;
+                            if (filter === 'rework') return bug.rework === true;
+                            return false;
+                        });
+                    }
+
+                    // Return true only if ALL filter categories match (AND logic)
+                    return matchesStatus && matchesPriority && matchesSpecial;
+                });
             }
             
             // Apply search filter
@@ -3230,7 +3421,7 @@
             }
         }
 
-        // Edit bug - open modal with bug data
+        // Edit bug - show inline edit form below the bug
         function editBug(bugId) {
             // Convert to number if it's a string
             const numericId = typeof bugId === 'string' ? parseInt(bugId) : bugId;
@@ -3241,45 +3432,251 @@
                 return;
             }
 
-            // Debug: Log bug data
-            console.log('Bug encontrado:', bug);
-            console.log('Descrição do bug:', bug.description);
+            // Remove any existing inline edit forms
+            document.querySelectorAll('.inline-edit-form').forEach(form => form.remove());
 
-            // Populate form fields
-            document.getElementById('edit-bug-id').value = bug.id;
-            document.getElementById('edit-bug-title').value = bug.title || '';
-            document.getElementById('edit-bug-description').value = bug.description || '';
-            document.getElementById('edit-bug-priority').value = bug.priority;
-            document.getElementById('edit-bug-status').value = bug.status;
-            document.getElementById('edit-bug-assignee').value = bug.assignee || '';
-            document.getElementById('edit-bug-root-cause').value = bug.rootCause || '';
-            document.getElementById('edit-bug-journey').value = bug.journey || '';
-            
-            // Populate open date (data de abertura)
+            // Find the bug item element
+            const bugItem = document.querySelector(`[data-bug-id="${numericId}"]`);
+            if (!bugItem) return;
+
+            // Format dates
+            let openDateStr = '';
             if (bug.date) {
                 const openDate = new Date(bug.date);
-                const dateStr = openDate.toISOString().split('T')[0];
-                document.getElementById('edit-bug-open-date').value = dateStr;
-            } else {
-                document.getElementById('edit-bug-open-date').value = '';
+                openDateStr = openDate.toISOString().split('T')[0];
             }
             
-            // Populate due date
+            let dueDateStr = '';
             if (bug.dueDate) {
                 const dueDate = new Date(bug.dueDate);
-                const dateStr = dueDate.toISOString().split('T')[0];
-                document.getElementById('edit-bug-due-date').value = dateStr;
-            } else {
-                document.getElementById('edit-bug-due-date').value = '';
+                dueDateStr = dueDate.toISOString().split('T')[0];
             }
 
-            // Populate history
-            renderBugHistory(bug);
+            // Create inline edit form
+            const inlineForm = document.createElement('div');
+            inlineForm.className = 'inline-edit-form';
+            inlineForm.innerHTML = `
+                <div style="background: #f4f4f4; padding: 20px; border-radius: 8px; margin-top: 10px; border: 2px solid #0f62fe;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0; color: #0f62fe;">✏️ Editar Bug #${bug.id}</h3>
+                        <button onclick="closeInlineEdit()" style="background: #e0e0e0; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600;">✕ Fechar</button>
+                    </div>
+                    <form onsubmit="saveInlineEdit(event, ${numericId})" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="grid-column: 1 / -1;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Título *</label>
+                            <input type="text" id="inline-title-${numericId}" value="${escapeHtml(bug.title)}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Descrição *</label>
+                            <textarea id="inline-description-${numericId}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em; min-height: 80px; resize: vertical;">${escapeHtml(bug.description)}</textarea>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Prioridade *</label>
+                            <select id="inline-priority-${numericId}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                                <option value="low" ${bug.priority === 'low' ? 'selected' : ''}>Baixa</option>
+                                <option value="medium" ${bug.priority === 'medium' ? 'selected' : ''}>Média</option>
+                                <option value="high" ${bug.priority === 'high' ? 'selected' : ''}>Alta</option>
+                                <option value="critical" ${bug.priority === 'critical' ? 'selected' : ''}>Crítica</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Status *</label>
+                            <select id="inline-status-${numericId}" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                                <option value="open" ${bug.status === 'open' ? 'selected' : ''}>Aberto</option>
+                                <option value="in-progress" ${bug.status === 'in-progress' ? 'selected' : ''}>Em Progresso</option>
+                                <option value="blocked-product" ${bug.status === 'blocked-product' ? 'selected' : ''}>Bloqueado - Produto</option>
+                                <option value="testing-vivo" ${bug.status === 'testing-vivo' ? 'selected' : ''}>Em Testes Vivo</option>
+                                <option value="resolved" ${bug.status === 'resolved' ? 'selected' : ''}>Resolvido</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Responsável</label>
+                            <input type="text" id="inline-assignee-${numericId}" value="${escapeHtml(bug.assignee || '')}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Causa Raiz</label>
+                            <select id="inline-root-cause-${numericId}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                                <option value="">Selecione...</option>
+                                <option value="code-error" ${bug.rootCause === 'code-error' ? 'selected' : ''}>Erro de Código</option>
+                                <option value="requirements" ${bug.rootCause === 'requirements' ? 'selected' : ''}>Requisitos Incompletos</option>
+                                <option value="design" ${bug.rootCause === 'design' ? 'selected' : ''}>Problema de Design</option>
+                                <option value="integration" ${bug.rootCause === 'integration' ? 'selected' : ''}>Erro de Integração</option>
+                                <option value="environment" ${bug.rootCause === 'environment' ? 'selected' : ''}>Problema de Ambiente</option>
+                                <option value="rejected" ${bug.rootCause === 'rejected' ? 'selected' : ''}>Rejeitado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Jornada</label>
+                            <input type="text" id="inline-journey-${numericId}" value="${escapeHtml(bug.journey || '')}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Data de Abertura</label>
+                            <input type="date" id="inline-open-date-${numericId}" value="${openDateStr}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Data de Vencimento</label>
+                            <input type="date" id="inline-due-date-${numericId}" value="${dueDateStr}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1em;">
+                        </div>
+                        <div style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                            <button type="button" onclick="deleteInlineBug(${numericId})" style="background: #da1e28; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1em;">🗑️ Excluir</button>
+                            <button type="button" onclick="closeInlineEdit()" style="background: #e0e0e0; color: #333; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1em;">Cancelar</button>
+                            <button type="submit" style="background: #0f62fe; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1em;">💾 Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            `;
 
-            // Show modal
-            document.getElementById('editModal').classList.add('active');
+            // Insert form after the bug item
+            bugItem.insertAdjacentElement('afterend', inlineForm);
+
+            // Scroll to the form
+            inlineForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
+
+        // Close inline edit form
+        function closeInlineEdit() {
+            document.querySelectorAll('.inline-edit-form').forEach(form => form.remove());
+        }
+
+        // Save inline edit
+        async function saveInlineEdit(event, bugId) {
+            event.preventDefault();
+
+            const bug = bugs.find(b => b.id === bugId);
+            if (!bug) return;
+
+            const oldStatus = bug.status;
+            const oldPriority = bug.priority;
+            const oldAssignee = bug.assignee;
+            const oldRootCause = bug.rootCause || '';
+            const oldJourney = bug.journey || '';
+
+            const newTitle = document.getElementById(`inline-title-${bugId}`).value;
+            const newDescription = document.getElementById(`inline-description-${bugId}`).value;
+            const newPriority = document.getElementById(`inline-priority-${bugId}`).value;
+            const newStatus = document.getElementById(`inline-status-${bugId}`).value;
+            const newAssignee = document.getElementById(`inline-assignee-${bugId}`).value;
+            const newRootCause = document.getElementById(`inline-root-cause-${bugId}`).value;
+            const newJourney = document.getElementById(`inline-journey-${bugId}`).value;
+            const newOpenDateValue = document.getElementById(`inline-open-date-${bugId}`).value;
+            const newDueDateValue = document.getElementById(`inline-due-date-${bugId}`).value;
+
+            // Fix timezone issue for dates
+            let newOpenDate = null;
+            if (newOpenDateValue) {
+                const [year, month, day] = newOpenDateValue.split('-');
+                newOpenDate = new Date(year, month - 1, day, 12, 0, 0);
+            }
+
+            let newDueDate = null;
+            if (newDueDateValue) {
+                const [year, month, day] = newDueDateValue.split('-');
+                newDueDate = new Date(year, month - 1, day, 12, 0, 0);
+            }
+
+            // Initialize history if it doesn't exist
+            if (!bug.history) {
+                bug.history = [{
+                    date: bug.date,
+                    action: 'created',
+                    status: oldStatus,
+                    user: oldAssignee
+                }];
+            }
+
+            // Track changes
+            let changes = [];
+
+            bug.title = newTitle;
+            bug.description = newDescription;
+
+            if (oldPriority !== newPriority) {
+                changes.push(`Prioridade: ${getPriorityLabel(oldPriority)} → ${getPriorityLabel(newPriority)}`);
+                bug.priority = newPriority;
+            }
+
+            if (oldAssignee !== newAssignee) {
+                changes.push(`Responsável: ${oldAssignee} → ${newAssignee}`);
+                bug.assignee = newAssignee;
+            }
+
+            if (oldRootCause !== newRootCause) {
+                const oldLabel = oldRootCause ? getRootCauseLabel(oldRootCause) : 'Não definida';
+                const newLabel = newRootCause ? getRootCauseLabel(newRootCause) : 'Não definida';
+                changes.push(`Causa Raiz: ${oldLabel} → ${newLabel}`);
+                bug.rootCause = newRootCause;
+            }
+
+            if (oldJourney !== newJourney) {
+                changes.push(`Jornada: ${oldJourney || 'Não definida'} → ${newJourney || 'Não definida'}`);
+                bug.journey = newJourney;
+            }
+
+            if (newOpenDate) {
+                bug.date = newOpenDate;
+            }
+
+            if (newDueDate) {
+                bug.dueDate = newDueDate;
+            }
+
+            // Handle status change
+            if (oldStatus !== newStatus) {
+                changes.push(`Status: ${getStatusLabel(oldStatus)} → ${getStatusLabel(newStatus)}`);
+                
+                if (oldStatus === 'resolved' && newStatus !== 'resolved') {
+                    bug.reopened = true;
+                    bug.reopenCount = (bug.reopenCount || 0) + 1;
+                    changes.push('Bug reaberto');
+                }
+
+                if (newStatus === 'resolved' && oldStatus !== 'resolved') {
+                    bug.resolvedDate = new Date();
+                }
+
+                bug.status = newStatus;
+            }
+
+            // Add history entry if there are changes
+            if (changes.length > 0) {
+                bug.history.push({
+                    date: new Date(),
+                    action: 'updated',
+                    changes: changes.join(', '),
+                    user: newAssignee || 'Sistema'
+                });
+            }
+
+            // Save to Firebase or localStorage
+            if (firebaseInitialized && isFirebaseConfigured()) {
+                await saveBugToFirebase(bug);
+            } else {
+                saveBugs();
+            }
+
+            renderBugList();
+            updateDashboard();
+            closeInlineEdit();
+            
+            alert('✅ Bug atualizado com sucesso!');
+        }
+
+        // Delete bug from inline form
+        async function deleteInlineBug(bugId) {
+            if (confirm('Tem certeza que deseja excluir este bug?')) {
+                if (firebaseInitialized && isFirebaseConfigured()) {
+                    await deleteBugFromFirebase(bugId);
+                } else {
+                    bugs = bugs.filter(b => b.id !== bugId);
+                    saveBugs();
+                    updateDashboard();
+                    renderBugList();
+                }
+                closeInlineEdit();
+                alert('✅ Bug excluído com sucesso!');
+            }
+        }
         // Render bug history
         function renderBugHistory(bug) {
             const historyContainer = document.getElementById('bug-history');
@@ -3340,9 +3737,25 @@
             }).join('');
         }
 
+        // Clear edit form
+        function clearEditForm() {
+            document.getElementById('edit-bug-id').value = '';
+            document.getElementById('edit-bug-title').value = '';
+            document.getElementById('edit-bug-description').value = '';
+            document.getElementById('edit-bug-priority').value = 'low';
+            document.getElementById('edit-bug-status').value = 'open';
+            document.getElementById('edit-bug-assignee').value = '';
+            document.getElementById('edit-bug-root-cause').value = '';
+            document.getElementById('edit-bug-journey').value = '';
+            document.getElementById('edit-bug-due-date').value = '';
+            document.getElementById('edit-bug-open-date').value = '';
+        }
+
         // Close edit modal
         function closeEditModal() {
             document.getElementById('editModal').classList.remove('active');
+            // Clear form after closing
+            clearEditForm();
         }
 
         // Show reopened bugs in new window
@@ -4379,6 +4792,7 @@
             }
             
             closeEditModal();
+            clearEditForm();
             alert('✅ Bug atualizado com sucesso!');
         }
 
@@ -4397,6 +4811,7 @@
                     renderBugList();
                 }
                 closeEditModal();
+                clearEditForm();
             }
         }
 
