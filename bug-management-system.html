@@ -2531,6 +2531,11 @@
                     <h3>🧪 Bugs Enviados para Em Teste Vivo por Dia (27/04 - 20 dias)</h3>
                     <div class="chart" id="testing-vivo-per-day-chart" style="height: 300px; display: flex; align-items: flex-end; gap: 4px; padding: 20px; background: white; border-radius: 8px;"></div>
                 </div>
+                <div class="chart-card" style="margin-top: 20px;">
+                    <h3>👥 Bugs por Responsável (Abertos e Em Progresso)</h3>
+                    <div class="chart" id="bugs-by-assignee-chart" style="height: 400px; display: flex; align-items: flex-end; gap: 8px; padding: 20px; background: white; border-radius: 8px; overflow-x: auto;"></div>
+                </div>
+
 
 
                 <div class="chart-card" style="margin-top: 20px;">
@@ -5147,6 +5152,7 @@
             updateReopenedPerDayChart();
             updateRejectedPerDayChart();
             updateTestingVivoPerDayChart();
+            updateBugsByAssigneeChart();
             generateCriticalBugsList();
             generateNormalBugsList();
             generateBlockedBugsList();
@@ -5610,6 +5616,300 @@
                 </div>
             `;
             chart.parentElement.appendChild(legendDiv);
+        }
+
+        // Update bugs by assignee chart
+        function updateBugsByAssigneeChart() {
+            const chart = document.getElementById('bugs-by-assignee-chart');
+            if (!chart) return;
+            
+            // Filter bugs that are open or in-progress
+            const activeBugs = bugs.filter(b => b.status === 'open' || b.status === 'in-progress');
+            
+            // Count bugs by assignee
+            const bugsByAssignee = {};
+            let unassignedCount = 0;
+            
+            activeBugs.forEach(bug => {
+                const assignee = bug.assignee && bug.assignee.trim() !== '' && bug.assignee !== 'Não atribuído' 
+                    ? bug.assignee 
+                    : null;
+                
+                if (assignee) {
+                    bugsByAssignee[assignee] = (bugsByAssignee[assignee] || 0) + 1;
+                } else {
+                    unassignedCount++;
+                }
+            });
+            
+            // Convert to array and sort by count (descending)
+            const assigneeData = Object.entries(bugsByAssignee)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count);
+            
+            // Add unassigned at the end if there are any
+            if (unassignedCount > 0) {
+                assigneeData.push({ name: 'Sem Responsável', count: unassignedCount });
+            }
+            
+            console.log('Bugs by Assignee:', assigneeData);
+            
+            // If no data, show empty state
+            if (assigneeData.length === 0) {
+                chart.innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 3em; margin-bottom: 10px;">📊</div>
+                        <div style="font-size: 1.1em; font-weight: 600;">Nenhum bug ativo</div>
+                        <div style="margin-top: 5px;">Não há bugs em aberto ou em progresso</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const maxValue = Math.max(...assigneeData.map(d => d.count), 1);
+            
+            chart.innerHTML = assigneeData.map(data => {
+                const height = (data.count / maxValue) * 100;
+                const isUnassigned = data.name === 'Sem Responsável';
+                const color = isUnassigned ? '#da1e28' : '#0f62fe';
+                const icon = isUnassigned ? '⚠️' : '👤';
+                
+                return `
+                    <div style="flex: 0 0 auto; min-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;" onclick="showBugsByAssignee('${data.name.replace(/'/g, "\\'")}')">
+                        <div style="font-size: 1.2em; font-weight: bold; color: ${color};">
+                            ${data.count}
+                        </div>
+                        <div style="width: 100%; background: ${color}; height: ${height}%; min-height: 30px; border-radius: 4px 4px 0 0; transition: all 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;" title="${data.name}: ${data.count} bug(s) - Clique para ver detalhes" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                            ${icon}
+                        </div>
+                        <div style="font-size: 0.75em; color: #161616; text-align: center; word-wrap: break-word; max-width: 120px; line-height: 1.3; font-weight: 500;">
+                            ${data.name}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add summary legend
+            const existingLegend = chart.parentElement.querySelector('.assignee-legend');
+            if (existingLegend) existingLegend.remove();
+            
+            const totalAssigned = assigneeData.filter(d => d.name !== 'Sem Responsável').reduce((sum, d) => sum + d.count, 0);
+            const totalBugs = activeBugs.length;
+            
+            const legendDiv = document.createElement('div');
+            legendDiv.className = 'assignee-legend';
+            legendDiv.style.cssText = 'display: flex; justify-content: center; gap: 30px; margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 8px; font-size: 0.9em;';
+            legendDiv.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 16px; height: 16px; background: #0f62fe; border-radius: 2px;"></div>
+                    <span><strong>👤 Com Responsável:</strong> ${totalAssigned} bug(s)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 16px; height: 16px; background: #da1e28; border-radius: 2px;"></div>
+                    <span><strong>⚠️ Sem Responsável:</strong> ${unassignedCount} bug(s)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span><strong>📊 Total:</strong> ${totalBugs} bug(s) ativos</span>
+                </div>
+            `;
+            chart.parentElement.appendChild(legendDiv);
+        }
+
+        // Show bugs by assignee in new window
+        function showBugsByAssignee(assigneeName) {
+            const isUnassigned = assigneeName === 'Sem Responsável';
+            
+            // Filter bugs by assignee (open and in-progress only)
+            const assigneeBugs = bugs.filter(bug => {
+                const isActive = bug.status === 'open' || bug.status === 'in-progress';
+                if (!isActive) return false;
+                
+                if (isUnassigned) {
+                    return !bug.assignee || bug.assignee.trim() === '' || bug.assignee === 'Não atribuído';
+                } else {
+                    return bug.assignee === assigneeName;
+                }
+            });
+            
+            if (assigneeBugs.length === 0) {
+                alert(`Nenhum bug ativo encontrado para ${assigneeName}`);
+                return;
+            }
+            
+            // Generate HTML for new window
+            const htmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bugs - ${assigneeName}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0;
+            padding: 30px;
+            box-shadow: none;
+            border: 1px solid #e0e0e0;
+        }
+        header {
+            background: ${isUnassigned ? 'linear-gradient(135deg, #da1e28 0%, #a2191f 100%)' : 'linear-gradient(135deg, #0f62fe 0%, #0043ce 100%)'};
+            color: white;
+            padding: 20px;
+            border-radius: 0;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .bug-count {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #161616;
+            border-left: 4px solid ${isUnassigned ? '#da1e28' : '#0f62fe'};
+        }
+        .bug-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 0;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.15s;
+        }
+        .bug-item:hover {
+            transform: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border-color: ${isUnassigned ? '#da1e28' : '#0f62fe'};
+        }
+        .bug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .bug-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #161616;
+            flex: 1;
+            min-width: 200px;
+        }
+        .bug-id {
+            background: ${isUnassigned ? '#da1e28' : '#0f62fe'};
+            color: white;
+            padding: 5px 12px;
+            border-radius: 0;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .bug-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .bug-badge {
+            padding: 5px 12px;
+            border-radius: 0;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: white;
+        }
+        .priority-critical { background: #da1e28; }
+        .priority-high { background: #fa4d56; }
+        .priority-medium { background: #f1c21b; color: #161616; }
+        .priority-low { background: #24a148; }
+        .status-open { background: #0f62fe; }
+        .status-in-progress { background: #f1c21b; color: #161616; }
+        .bug-description {
+            color: #525252;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f4f4f4;
+            border-radius: 0;
+        }
+        .bug-footer {
+            font-size: 0.9em;
+            color: #525252;
+            line-height: 1.8;
+        }
+        .bug-footer strong {
+            color: #161616;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>${isUnassigned ? '⚠️' : '👤'} ${assigneeName}</h1>
+            <div class="subtitle">Bugs Ativos (Abertos e Em Progresso)</div>
+        </header>
+        
+        <div class="bug-count">
+            Total de bugs: <strong>${assigneeBugs.length}</strong>
+        </div>
+        
+        <div id="bug-list">
+            ${assigneeBugs.map(bug => `
+                <div class="bug-item">
+                    <div class="bug-header">
+                        <div class="bug-title">${escapeHtml(bug.title)}</div>
+                        <div class="bug-id">#${bug.id}</div>
+                    </div>
+                    <div class="bug-meta">
+                        <span class="bug-badge priority-${bug.priority}">${getPriorityLabel(bug.priority)}</span>
+                        <span class="bug-badge status-${bug.status}">${getStatusLabel(bug.status)}</span>
+                    </div>
+                    <div class="bug-description">${escapeHtml(bug.description)}</div>
+                    <div class="bug-footer">
+                        <strong>Status:</strong> ${getStatusLabel(bug.status)}<br>
+                        <strong>Data:</strong> ${formatDate(bug.date)}<br>
+                        <strong>Aging:</strong> ${formatAging(calculateAging(bug.date, bug.status), bug.status)}<br>
+                        ${bug.dueDate ? `<strong>Entrega:</strong> ${formatDueDate(bug.dueDate, bug.status)}<br>` : ''}
+                        ${bug.journey ? `<strong>Jornada:</strong> ${escapeHtml(bug.journey)}<br>` : ''}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+</body>
+</html>
+            `;
+            
+            // Open in new window
+            const newWindow = window.open('', '_blank', 'width=1200,height=800');
+            if (newWindow) {
+                newWindow.document.write(htmlContent);
+                newWindow.document.close();
+            } else {
+                alert('⚠️ Por favor, permita pop-ups para visualizar os bugs em uma nova janela.');
+            }
         }
 
         // Update report aging chart
