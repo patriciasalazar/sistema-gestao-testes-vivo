@@ -2171,10 +2171,6 @@
                                     <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="resolved" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 0.9em;">Resolvidos</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
-                                    <input type="checkbox" class="filter-checkbox" data-filter-type="status" data-filter-value="rejeitado" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
-                                    <span style="font-size: 0.9em;">❌ Rejeitados</span>
-                                </label>
                             </div>
                         </div>
                         
@@ -2206,6 +2202,14 @@
                             <h4 style="margin: 0 0 10px 0; color: #24a148; font-size: 0.95em; font-weight: 600;">🗺️ Jornada</h4>
                             <div id="journey-filters-container" style="display: flex; flex-direction: column; gap: 8px;">
                                 <!-- Journey filters will be populated dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- Root Cause Filters -->
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; color: #da1e28; font-size: 0.95em; font-weight: 600;">🔍 Causa Raiz</h4>
+                            <div id="root-cause-filters-container" style="display: flex; flex-direction: column; gap: 8px;">
+                                <!-- Root cause filters will be populated dynamically -->
                             </div>
                         </div>
                         
@@ -2970,8 +2974,9 @@
                 // Set correct resolution dates based on history
                 setCorrectResolutionDates();
                 
-                // Populate journey filters
+                // Populate filters
                 populateJourneyFilters();
+                populateRootCauseFilters();
                 
                 updateDashboard();
                 renderBugList();
@@ -3016,8 +3021,9 @@
                 }
             }
             
-            // Populate journey filters
+            // Populate filters
             populateJourneyFilters();
+            populateRootCauseFilters();
             
             updateDashboard();
             renderBugList();
@@ -3203,6 +3209,7 @@
                 bugs.push(bug);
                 saveBugs();
                 populateJourneyFilters();
+                populateRootCauseFilters();
                 updateDashboard();
             }
             
@@ -3227,6 +3234,7 @@
             status: [],
             priority: [],
             journey: [],
+            rootCause: [],
             special: []
         };
 
@@ -3250,6 +3258,27 @@
                 </label>
             `).join('');
         }
+        // Populate root cause filters dynamically
+        function populateRootCauseFilters() {
+            const container = document.getElementById('root-cause-filters-container');
+            if (!container) return;
+            
+            // Get unique root causes from bugs
+            const rootCauses = [...new Set(bugs.map(bug => bug.rootCause).filter(rc => rc && rc.trim() !== ''))].sort();
+            
+            if (rootCauses.length === 0) {
+                container.innerHTML = '<div style="color: #999; font-size: 0.85em; padding: 6px;">Nenhuma causa raiz cadastrada</div>';
+                return;
+            }
+            
+            container.innerHTML = rootCauses.map(rootCause => `
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f4f4f4'" onmouseout="this.style.background='transparent'">
+                    <input type="checkbox" class="filter-checkbox" data-filter-type="rootCause" data-filter-value="${escapeHtml(rootCause)}" onchange="applyMultiFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 0.9em;">${getRootCauseLabel(rootCause)}</span>
+                </label>
+            `).join('');
+        }
+
 
         // Apply multi-filters
         function applyMultiFilters() {
@@ -3258,6 +3287,7 @@
                 status: [],
                 priority: [],
                 journey: [],
+                rootCause: [],
                 special: []
             };
 
@@ -3279,7 +3309,7 @@
             const display = document.getElementById('active-filters-display');
             const tagsContainer = document.getElementById('active-filters-tags');
             
-            const totalFilters = activeFilters.status.length + activeFilters.priority.length + activeFilters.journey.length + activeFilters.special.length;
+            const totalFilters = activeFilters.status.length + activeFilters.priority.length + activeFilters.journey.length + activeFilters.rootCause.length + activeFilters.special.length;
             
             if (totalFilters === 0) {
                 display.style.display = 'none';
@@ -3304,6 +3334,12 @@
             // Add journey tags
             activeFilters.journey.forEach(value => {
                 const tag = createFilterTag(`🗺️ ${value}`, 'journey', value);
+                tagsContainer.appendChild(tag);
+            });
+
+            // Add root cause tags
+            activeFilters.rootCause.forEach(value => {
+                const tag = createFilterTag(`🔍 ${getRootCauseLabel(value)}`, 'rootCause', value);
                 tagsContainer.appendChild(tag);
             });
 
@@ -3368,13 +3404,15 @@
             const hasStatusFilters = activeFilters.status.length > 0;
             const hasPriorityFilters = activeFilters.priority.length > 0;
             const hasJourneyFilters = activeFilters.journey.length > 0;
+            const hasRootCauseFilters = activeFilters.rootCause.length > 0;
             const hasSpecialFilters = activeFilters.special.length > 0;
             
-            if (hasStatusFilters || hasPriorityFilters || hasJourneyFilters || hasSpecialFilters) {
+            if (hasStatusFilters || hasPriorityFilters || hasJourneyFilters || hasRootCauseFilters || hasSpecialFilters) {
                 filteredBugs = filteredBugs.filter(bug => {
                     let matchesStatus = !hasStatusFilters;
                     let matchesPriority = !hasPriorityFilters;
                     let matchesJourney = !hasJourneyFilters;
+                    let matchesRootCause = !hasRootCauseFilters;
                     let matchesSpecial = !hasSpecialFilters;
 
                     // Check status filters
@@ -3392,6 +3430,11 @@
                         matchesJourney = bug.journey && activeFilters.journey.includes(bug.journey);
                     }
 
+                    // Check root cause filters
+                    if (hasRootCauseFilters) {
+                        matchesRootCause = bug.rootCause && activeFilters.rootCause.includes(bug.rootCause);
+                    }
+
                     // Check special filters
                     if (hasSpecialFilters) {
                         matchesSpecial = activeFilters.special.some(filter => {
@@ -3402,7 +3445,7 @@
                     }
 
                     // Return true only if ALL filter categories match (AND logic)
-                    return matchesStatus && matchesPriority && matchesJourney && matchesSpecial;
+                    return matchesStatus && matchesPriority && matchesJourney && matchesRootCause && matchesSpecial;
                 });
             }
             
@@ -4849,6 +4892,7 @@
                 // Fallback to localStorage
                 saveBugs();
                 populateJourneyFilters();
+                populateRootCauseFilters();
                 renderBugList();
                 updateDashboard();
             }
@@ -4870,6 +4914,7 @@
                     bugs = bugs.filter(b => b.id !== bugId);
                     saveBugs();
                     populateJourneyFilters();
+                    populateRootCauseFilters();
                     updateDashboard();
                     renderBugList();
                 }
