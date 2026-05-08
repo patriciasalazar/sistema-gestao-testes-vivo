@@ -2915,6 +2915,9 @@
         // Bug storage
         let bugs = [];
         let currentFilter = 'all';
+        
+        // Debug log to confirm script is running
+        console.log('✅ Script JavaScript carregado com sucesso');
         let currentRootCauseFilter = null;
         let firebaseInitialized = false;
         let unsubscribe = null;
@@ -2962,6 +2965,8 @@
                         date: data.date?.toDate() || new Date(),
                         closedDate: data.closedDate?.toDate() || undefined,
                         dueDate: data.dueDate?.toDate() || null,
+                        reopened: data.reopened || false,
+                        rework: data.rework || false,
                         history: data.history ? data.history.map(h => ({
                             ...h,
                             date: h.date?.toDate() || new Date()
@@ -2973,6 +2978,13 @@
                 
                 // Set correct resolution dates based on history
                 setCorrectResolutionDates();
+                
+                // Detect rework from history
+                console.log('⚡ Prestes a chamar detectReworkFromHistory()');
+                console.log('⚡ Bugs carregados:', bugs.length);
+                console.log('⚡ Bug #2993209 existe?', bugs.find(b => b.id === 2993209) ? 'SIM' : 'NÃO');
+                detectReworkFromHistory();
+                console.log('⚡ detectReworkFromHistory() executada');
                 
                 // Populate filters
                 populateJourneyFilters();
@@ -3020,6 +3032,13 @@
                     bugs = [];
                 }
             }
+            
+            // Detect rework from history
+            console.log('⚡ Prestes a chamar detectReworkFromHistory()');
+            console.log('⚡ Bugs carregados:', bugs.length);
+            console.log('⚡ Bug #2993209 existe?', bugs.find(b => b.id === 2993209) ? 'SIM' : 'NÃO');
+            detectReworkFromHistory();
+            console.log('⚡ detectReworkFromHistory() executada');
             
             // Populate filters
             populateJourneyFilters();
@@ -3074,6 +3093,114 @@
                 console.log(`📋 Bugs resolvidos disponíveis:`, bugs.filter(b => b.status === 'resolved').map(b => `#${b.id}: ${b.title}`));
             }
         }
+        // Detect and mark rework bugs based on history
+        function detectReworkFromHistory() {
+            console.log('🔄 Iniciando detecção de retrabalho...');
+            console.log(`📊 Total de bugs a analisar: ${bugs.length}`);
+            let updated = 0;
+            
+            bugs.forEach(bug => {
+                if (!bug.history || !Array.isArray(bug.history)) {
+                    console.log(`⚠️ Bug #${bug.id} sem histórico`);
+                    return;
+                }
+                
+                // Log completo para bug específico
+                if (bug.id === 2993209) {
+                    console.log(`\n🔍 === BUG #${bug.id} ===`);
+                    console.log(`Status atual: ${bug.status}`);
+                    console.log(`Rework atual: ${bug.rework}`);
+                    console.log(`Histórico completo (${bug.history.length} entradas):`);
+                    bug.history.forEach((entry, idx) => {
+                        console.log(`  [${idx}] ${entry.date || entry.timestamp}:`, entry);
+                    });
+                }
+                
+                // Check if bug has transition from testing-vivo to open/in-progress
+                let hasRework = false;
+                bug.history.forEach((entry, index) => {
+                    if (entry.changes) {
+                        const changes = Array.isArray(entry.changes) ? entry.changes.join(' ') : String(entry.changes);
+                        
+                        const isReworkTransition =
+                            changes.includes('Em Testes Vivo → Aberto') ||
+                            changes.includes('Em Testes Vivo → Em Progresso') ||
+                            changes.includes('Em Testes Vivo → Bloqueado Produto') ||
+                            changes.includes('🧪 Em Testes Vivo → Aberto') ||
+                            changes.includes('🧪 Em Testes Vivo → Em Progresso') ||
+                            changes.includes('🧪 Em Testes Vivo → Bloqueado Produto') ||
+                            changes.includes('testing-vivo → open') ||
+                            changes.includes('testing-vivo → in-progress') ||
+                            changes.includes('testing-vivo → blocked-product') ||
+                            changes.includes('🔄 Retrabalho identificado') ||
+                            (changes.toLowerCase().includes('status') &&
+                             changes.toLowerCase().includes('testes') &&
+                             changes.toLowerCase().includes('vivo') &&
+                             (changes.toLowerCase().includes('aberto') ||
+                              changes.toLowerCase().includes('progresso') ||
+                              changes.toLowerCase().includes('bloqueado')));
+                        
+                        if (isReworkTransition) {
+                            hasRework = true;
+                            if (bug.id === 2993209) {
+                                console.log(`✅ Bug #${bug.id} - Retrabalho detectado na entrada ${index}`);
+                            }
+                        }
+                    }
+                });
+                
+                // Update bug if rework detected but not marked
+                if (hasRework && !bug.rework) {
+                    bug.rework = true;
+                    updated++;
+                    console.log(`✅ Bug #${bug.id} marcado como retrabalho baseado no histórico`);
+                }
+            });
+            
+            if (updated > 0) {
+                console.log(`🔄 ${updated} bugs marcados como retrabalho baseado no histórico`);
+                // Save all bugs to persist the rework flag
+                bugs.forEach(bug => {
+                    if (bug.rework && firebaseInitialized && isFirebaseConfigured()) {
+                        saveBugToFirebase(bug);
+                    }
+                });
+                if (!firebaseInitialized || !isFirebaseConfigured()) {
+                    saveBugs();
+                }
+            }
+        }
+        
+        // Test function to manually mark bug as rework (for debugging)
+        window.markBugAsRework = function(bugId) {
+            const bug = bugs.find(b => b.id === bugId);
+            if (!bug) {
+                console.error(`❌ Bug #${bugId} não encontrado`);
+                return;
+            }
+            
+            console.log(`🔍 Bug #${bugId} encontrado:`, bug);
+            console.log(`Status atual: ${bug.status}`);
+            console.log(`Rework atual: ${bug.rework}`);
+            
+            bug.rework = true;
+            console.log(`✅ Bug #${bugId} marcado como retrabalho`);
+            
+            // Save
+            if (firebaseInitialized && isFirebaseConfigured()) {
+                saveBugToFirebase(bug).then(() => {
+                    console.log(`💾 Bug #${bugId} salvo no Firebase`);
+                    renderBugList();
+                    updateDashboard();
+                });
+            } else {
+                saveBugs();
+                renderBugList();
+                updateDashboard();
+                console.log(`💾 Bug #${bugId} salvo no localStorage`);
+            }
+        };
+
 
 
         // Save bugs to Firebase or localStorage
@@ -4855,11 +4982,12 @@
                     changes.push('⚠️ Bug reaberto');
                 }
 
-                // Check if bug is rework (from testing-vivo to open or in-progress)
+                // Check if bug is rework (from testing-vivo to open, in-progress, or blocked-product)
                 if (oldStatus === 'testing-vivo' &&
-                    (newStatus === 'open' || newStatus === 'in-progress')) {
+                    (newStatus === 'open' || newStatus === 'in-progress' || newStatus === 'blocked-product')) {
                     bug.rework = true;
                     changes.push('🔄 Retrabalho identificado');
+                    console.log(`✅ Bug #${bug.id} marcado como retrabalho: ${oldStatus} → ${newStatus}`);
                 }
 
                 // Persist the date when a bug is resolved or closed so reports/charts use the actual completion day
