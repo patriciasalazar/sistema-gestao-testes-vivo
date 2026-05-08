@@ -882,7 +882,7 @@
             #reports::after {
         /* Modal Styles */
         .modal {
-            display: none;
+            display: none !important;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -2238,100 +2238,6 @@
 
                 <div class="bug-list" id="bug-list"></div>
 
-                <!-- Edit Bug Modal -->
-                <div id="editModal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2>✏️ Editar Bug</h2>
-                            <button class="close-modal" onclick="closeEditModal()">&times;</button>
-                        </div>
-                        <form class="bug-form" onsubmit="saveEditBug(event)">
-                            <input type="hidden" id="edit-bug-id">
-                            
-                            <div class="form-group">
-                                <label for="edit-bug-title">Título do Bug *</label>
-                                <input type="text" id="edit-bug-title" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="edit-bug-description">Descrição *</label>
-                                <textarea id="edit-bug-description" required></textarea>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="edit-bug-priority">Prioridade *</label>
-                                    <select id="edit-bug-priority" required>
-                                        <option value="low">Baixa</option>
-                                        <option value="medium">Média</option>
-                                        <option value="high">Alta</option>
-                                        <option value="critical">Crítica</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="edit-bug-status">Status *</label>
-                                    <select id="edit-bug-status" required>
-                                        <option value="open">Aberto</option>
-                                        <option value="in-progress">Em Progresso</option>
-                                        <option value="blocked-product">🚫 Bloqueado - Produtos</option>
-                                        <option value="pending-deployment">⏳ Aguardando Implantação</option>
-                                        <option value="testing-vivo">🧪 Em Testes Vivo</option>
-                                        <option value="resolved">Resolvido</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="edit-bug-assignee">Responsável</label>
-                                    <input type="text" id="edit-bug-assignee" placeholder="Nome do responsável">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="edit-bug-root-cause">Causa Raiz</label>
-                                    <select id="edit-bug-root-cause">
-                                        <option value="">Não definida</option>
-                                        <option value="code-error">Erro de código</option>
-                                        <option value="environment-issue">Problema de ambiente</option>
-                                        <option value="data-issue">Problema de massa</option>
-                                        <option value="intermittency">Intermitência</option>
-                                        <option value="rejected">Rejeitado</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="edit-bug-journey">Jornada</label>
-                                    <input type="text" id="edit-bug-journey" placeholder="Ex: Onboarding, Checkout, Login">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-bug-open-date">📅 Data de Abertura</label>
-                                <input type="date" id="edit-bug-open-date">
-                            </div>
-
-
-                            <div class="form-group">
-                                <label for="edit-bug-due-date">📅 Data de Entrega</label>
-                                <input type="date" id="edit-bug-due-date">
-                            </div>
-
-                            <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
-                                <button type="submit" class="btn" style="flex: 2; min-width: 180px;">💾 Salvar Alterações</button>
-                                <button type="button" class="btn" onclick="deleteFromModal()" style="flex: 1; min-width: 120px; background: #da1e28; color: white; border-color: #da1e28;">🗑️ Excluir</button>
-                                <button type="button" class="btn" onclick="closeEditModal()" style="flex: 1; min-width: 120px; background: #8d8d8d; color: white; border-color: #8d8d8d;">❌ Cancelar</button>
-                            </div>
-                        </form>
-
-                        <!-- Bug History Section -->
-                        <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--ibm-gray-20);">
-                            <h3 style="color: var(--ibm-blue); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 1.1em; font-weight: 600;">
-                                📜 Histórico de Alterações
-                            </h3>
-                            <div id="bug-history" style="max-height: 350px; overflow-y: auto; padding-right: 8px;">
-                                <!-- History will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- New Bug Section -->
@@ -3549,6 +3455,15 @@
 
         // Render bug list with multi-filter support
         function renderBugList() {
+            // Close any open inline edit forms before re-rendering
+            closeInlineEdit();
+            
+            // Close the edit modal if it's open
+            const editModal = document.getElementById('editModal');
+            if (editModal && editModal.classList.contains('active')) {
+                closeEditModal();
+            }
+            
             const bugList = document.getElementById('bug-list');
             const searchTerm = document.getElementById('bug-search')?.value.toLowerCase() || '';
             
@@ -3631,11 +3546,19 @@
                         <p>${message}</p>
                     </div>
                 `;
+                
+                // Double-check: close any lingering inline forms and modal after clearing the list
+                closeInlineEdit();
+                const editModal = document.getElementById('editModal');
+                if (editModal && editModal.classList.contains('active')) {
+                    closeEditModal();
+                }
+                
                 return;
             }
 
             bugList.innerHTML = filteredBugs.map(bug => `
-                <div class="bug-item" data-bug-id="${bug.id}" onclick="editBug('${bug.id}')" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                <div class="bug-item" data-bug-id="${bug.id}" style="transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
                     <div class="bug-header">
                         <div class="bug-title">${escapeHtml(bug.title)}</div>
                         <div class="bug-id">#${bug.id}</div>
@@ -3656,9 +3579,9 @@
                             ${bug.rootCause ? `<strong>Causa Raiz:</strong> ${getRootCauseLabel(bug.rootCause)}<br>` : ''}
                             ${bug.journey ? `<strong>Jornada:</strong> ${escapeHtml(bug.journey)}` : ''}
                         </div>
-                        <div style="color: #999; font-size: 0.9em; font-style: italic;">
-                            ✏️ Clique para editar
-                        </div>
+                        <button onclick="editBug('${bug.id}')" style="background: #0f62fe; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: background 0.2s;" onmouseover="this.style.background='#0353e9'" onmouseout="this.style.background='#0f62fe'">
+                            ✏️ Editar
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -3794,7 +3717,24 @@
 
         // Close inline edit form
         function closeInlineEdit() {
-            document.querySelectorAll('.inline-edit-form').forEach(form => form.remove());
+            // Remove all inline edit forms from the entire document
+            document.querySelectorAll('.inline-edit-form').forEach(form => {
+                form.remove();
+            });
+            
+            // Also check for any orphaned forms that might have lost their class
+            const bugList = document.getElementById('bug-list');
+            if (bugList) {
+                // Remove any direct children that are not bug items or empty state
+                Array.from(bugList.children).forEach(child => {
+                    if (!child.classList.contains('bug-item') &&
+                        !child.classList.contains('empty-state') &&
+                        child.tagName === 'DIV' &&
+                        child.querySelector('form')) {
+                        child.remove();
+                    }
+                });
+            }
         }
 
         // Save inline edit
@@ -7221,6 +7161,9 @@
 
         // Initialize on load
         window.addEventListener('load', () => {
+            // Close any inline edit forms on page load
+            closeInlineEdit();
+            
             initializeSampleData();
             
             // Wait for bugs to load, then update status
