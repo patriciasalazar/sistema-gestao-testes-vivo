@@ -2428,6 +2428,16 @@
 
                 <div class="chart-card" style="margin-top: 20px;">
                     <h3>🗺️ Bugs Abertos por Jornada</h3>
+                    <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 15px; font-size: 0.9em;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 16px; height: 16px; background: #0f62fe; border-radius: 3px;"></div>
+                            <span>IBM</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 16px; height: 16px; background: #24a148; border-radius: 3px;"></div>
+                            <span>Em Testes Vivo</span>
+                        </div>
+                    </div>
                     <div class="chart" id="journey-chart"></div>
                 </div>
 
@@ -5436,38 +5446,54 @@
         function updateJourneyChart() {
             const chart = document.getElementById('journey-chart');
             
-            // Get only open bugs (not resolved or closed)
+            // Get only open bugs (not resolved)
             const openBugs = bugs.filter(b => b.status !== 'resolved');
             
-            // Group bugs by journey
+            // Group bugs by journey and separate IBM vs Vivo
             const journeyGroups = {};
             openBugs.forEach(bug => {
                 const journey = bug.journey || 'Não definida';
-                journeyGroups[journey] = (journeyGroups[journey] || 0) + 1;
+                if (!journeyGroups[journey]) {
+                    journeyGroups[journey] = { ibm: 0, vivo: 0 };
+                }
+                
+                // Apenas bugs em "testing-vivo" são Vivo (verde), todos os outros são IBM (azul)
+                if (bug.status === 'testing-vivo') {
+                    journeyGroups[journey].vivo++;
+                } else {
+                    journeyGroups[journey].ibm++;
+                }
             });
 
-            // Sort by count (descending)
+            // Sort by total count (descending)
             const sortedJourneys = Object.entries(journeyGroups)
-                .sort((a, b) => b[1] - a[1]);
+                .sort((a, b) => (b[1].ibm + b[1].vivo) - (a[1].ibm + a[1].vivo));
 
             if (sortedJourneys.length === 0) {
                 chart.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">Nenhum bug aberto encontrado</div>';
                 return;
             }
 
-            const maxValue = Math.max(...sortedJourneys.map(([_, count]) => count), 1);
+            const maxValue = Math.max(...sortedJourneys.map(([_, counts]) => counts.ibm + counts.vivo), 1);
             
-            chart.innerHTML = sortedJourneys.map(([journey, count]) => {
-                const height = (count / maxValue) * 100;
+            chart.innerHTML = sortedJourneys.map(([journey, counts]) => {
+                const totalCount = counts.ibm + counts.vivo;
+                const totalHeight = (totalCount / maxValue) * 100;
+                const ibmHeight = (counts.ibm / totalCount) * 100;
+                const vivoHeight = (counts.vivo / totalCount) * 100;
+                
                 // Escape journey for onclick attribute
                 const escapedJourney = journey.replace(/'/g, "\\'").replace(/"/g, '"');
+                
                 return `
-                    <div class="bar" style="height: ${height}%; cursor: pointer; transition: transform 0.2s, opacity 0.2s;"
+                    <div class="bar" style="height: ${totalHeight}%; cursor: pointer; transition: transform 0.2s, opacity 0.2s; position: relative; display: flex; flex-direction: column-reverse; background: transparent;"
                          onclick="showJourneyBugs('${escapedJourney}')"
                          onmouseover="this.style.transform='translateY(-5px)'; this.style.opacity='0.8';"
                          onmouseout="this.style.transform='translateY(0)'; this.style.opacity='1';"
-                         title="Clique para ver os bugs desta jornada">
-                        <div class="bar-value">${count}</div>
+                         title="IBM: ${counts.ibm} | Em Testes Vivo: ${counts.vivo}">
+                        ${counts.ibm > 0 ? `<div style="height: ${ibmHeight}%; background: #0f62fe; border-radius: ${counts.vivo > 0 ? '0' : '4px 4px 0 0'};"></div>` : ''}
+                        ${counts.vivo > 0 ? `<div style="height: ${vivoHeight}%; background: #24a148; border-radius: ${counts.ibm > 0 ? '0' : '4px 4px 0 0'};"></div>` : ''}
+                        <div class="bar-value" style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; white-space: nowrap;">${totalCount}</div>
                         <div class="bar-label">${escapeHtml(journey)}</div>
                     </div>
                 `;
