@@ -3106,7 +3106,7 @@
                 }
                 
                 // Log completo para bug específico
-                if (bug.id === 2993209) {
+                if (bug.id === 2992082 || bug.id === 2993209) {
                     console.log(`\n🔍 === BUG #${bug.id} ===`);
                     console.log(`Status atual: ${bug.status}`);
                     console.log(`Rework atual: ${bug.rework}`);
@@ -3116,12 +3116,33 @@
                     });
                 }
                 
-                // Check if bug has transition from testing-vivo to open/in-progress
+                // LÓGICA CORRETA: Contar quantas vezes o bug foi para "testing-vivo"
+                // RETRABALHO = Foi para testing-vivo 2 ou mais vezes (não importa se voltou para dev)
+                let testingVivoCount = 0;
                 let hasRework = false;
+                
                 bug.history.forEach((entry, index) => {
                     if (entry.changes) {
                         const changes = Array.isArray(entry.changes) ? entry.changes.join(' ') : String(entry.changes);
                         
+                        // Detectar transições PARA testing-vivo
+                        const isGoingToTestingVivo =
+                            changes.includes('→ Em Testes Vivo') ||
+                            changes.includes('→ 🧪 Em Testes Vivo') ||
+                            changes.includes('→ testing-vivo') ||
+                            (changes.toLowerCase().includes('status') &&
+                             changes.toLowerCase().includes('→') &&
+                             changes.toLowerCase().includes('testes') &&
+                             changes.toLowerCase().includes('vivo'));
+                        
+                        if (isGoingToTestingVivo) {
+                            testingVivoCount++;
+                            if (bug.id === 2992082 || bug.id === 2993209) {
+                                console.log(`  📊 Bug #${bug.id} - Entrada ${index}: Foi para testing-vivo (contagem: ${testingVivoCount})`);
+                            }
+                        }
+                        
+                        // Também detectar transições clássicas de retrabalho (de testing-vivo para dev)
                         const isReworkTransition =
                             changes.includes('Em Testes Vivo → Aberto') ||
                             changes.includes('Em Testes Vivo → Em Progresso') ||
@@ -3132,28 +3153,34 @@
                             changes.includes('testing-vivo → open') ||
                             changes.includes('testing-vivo → in-progress') ||
                             changes.includes('testing-vivo → blocked-product') ||
-                            changes.includes('🔄 Retrabalho identificado') ||
-                            (changes.toLowerCase().includes('status') &&
-                             changes.toLowerCase().includes('testes') &&
-                             changes.toLowerCase().includes('vivo') &&
-                             (changes.toLowerCase().includes('aberto') ||
-                              changes.toLowerCase().includes('progresso') ||
-                              changes.toLowerCase().includes('bloqueado')));
+                            changes.includes('🔄 Retrabalho identificado');
                         
                         if (isReworkTransition) {
                             hasRework = true;
-                            if (bug.id === 2993209) {
-                                console.log(`✅ Bug #${bug.id} - Retrabalho detectado na entrada ${index}`);
+                            if (bug.id === 2992082 || bug.id === 2993209) {
+                                console.log(`  ✅ Bug #${bug.id} - Entrada ${index}: Retrabalho clássico detectado`);
                             }
                         }
                     }
                 });
                 
-                // Update bug if rework detected but not marked
-                if (hasRework && !bug.rework) {
+                // Bug é retrabalho SOMENTE se:
+                // 1. Foi para testing-vivo 2 ou mais vezes (>= 2) OU
+                // 2. Teve transição clássica de retrabalho (testing-vivo → dev)
+                if ((testingVivoCount >= 2 || hasRework) && !bug.rework) {
                     bug.rework = true;
                     updated++;
-                    console.log(`✅ Bug #${bug.id} marcado como retrabalho baseado no histórico`);
+                    const reason = testingVivoCount >= 2
+                        ? `foi para testing-vivo ${testingVivoCount} vezes`
+                        : 'voltou de testing-vivo para desenvolvimento';
+                    console.log(`✅ Bug #${bug.id} marcado como retrabalho (${reason})`);
+                }
+                
+                // IMPORTANTE: Remover flag de retrabalho se foi apenas 1 vez para testing-vivo
+                if (testingVivoCount === 1 && !hasRework && bug.rework) {
+                    bug.rework = false;
+                    updated++;
+                    console.log(`🔄 Bug #${bug.id} removido de retrabalho (foi apenas 1 vez para testing-vivo)`);
                 }
             });
             
@@ -4982,12 +5009,37 @@
                     changes.push('⚠️ Bug reaberto');
                 }
 
-                // Check if bug is rework (from testing-vivo to open, in-progress, or blocked-product)
+                // Check if bug is rework
+                // Caso 1: Voltou de testing-vivo para desenvolvimento (retrabalho clássico)
                 if (oldStatus === 'testing-vivo' &&
                     (newStatus === 'open' || newStatus === 'in-progress' || newStatus === 'blocked-product')) {
                     bug.rework = true;
                     changes.push('🔄 Retrabalho identificado');
                     console.log(`✅ Bug #${bug.id} marcado como retrabalho: ${oldStatus} → ${newStatus}`);
+                }
+                
+                // Caso 2: Foi para testing-vivo pela 2ª vez ou mais (mesmo sem voltar para dev)
+                // Contar quantas vezes foi para testing-vivo no histórico
+                if (newStatus === 'testing-vivo' && bug.history && bug.history.length > 0) {
+                    let testingVivoCount = 0;
+                    bug.history.forEach(entry => {
+                        if (entry.changes) {
+                            const entryChanges = Array.isArray(entry.changes) ? entry.changes.join(' ') : String(entry.changes);
+                            if (entryChanges.includes('→ Em Testes Vivo') ||
+                                entryChanges.includes('→ 🧪 Em Testes Vivo') ||
+                                entryChanges.includes('→ testing-vivo')) {
+                                testingVivoCount++;
+                            }
+                        }
+                    });
+                    
+                    // REGRA CORRETA: Se já foi para testing-vivo 1 vez antes, esta é a 2ª vez = retrabalho
+                    // testingVivoCount >= 1 significa que esta mudança atual é a 2ª vez ou mais
+                    if (testingVivoCount >= 1 && !bug.rework) {
+                        bug.rework = true;
+                        changes.push('🔄 Retrabalho identificado (reteste)');
+                        console.log(`✅ Bug #${bug.id} marcado como retrabalho: foi para testing-vivo ${testingVivoCount + 1} vezes`);
+                    }
                 }
 
                 // Persist the date when a bug is resolved or closed so reports/charts use the actual completion day
