@@ -16600,8 +16600,26 @@ thread_id: 59c575b8-18a8-4db5-b6af-1de37c71d600
                 <!-- Temporal Charts -->
                 <div class="chart-card" style="margin-bottom: 30px;">
                     <h3>📈 Bugs Abertos e Resolvidos por Dia (Últimos 30 dias)</h3>
-                    <div class="chart" id="analytics-bugs-per-day-chart" style="height: 300px; display: flex; align-items: flex-end; gap: 4px; padding: 20px; background: white; border-radius: 8px;">
+                    <div class="chart" id="analytics-bugs-per-day-chart" style="height: 300px; display: flex; align-items: flex-end; gap: 4px; padding: 20px; background: white; border-radius: 8px; position: relative;">
                         <!-- Will be populated by JavaScript -->
+                    </div>
+                    <div class="bugs-per-day-legend" style="display: flex; justify-content: center; gap: 20px; margin-top: 15px; font-size: 0.85em;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="width: 14px; height: 14px; background: #26de81; border-radius: 2px;"></div>
+                            <span>↑ Abertos (1-2)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="width: 14px; height: 14px; background: #ffa502; border-radius: 2px;"></div>
+                            <span>↑ Abertos (3-5)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="width: 14px; height: 14px; background: #ff4757; border-radius: 2px;"></div>
+                            <span>↑ Abertos (6+)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="width: 14px; height: 14px; background: #667eea; border-radius: 2px;"></div>
+                            <span>↓ Resolvidos</span>
+                        </div>
                     </div>
                 </div>
 
@@ -29721,28 +29739,6 @@ thread_id: 59c575b8-18a8-4db5-b6af-1de37c71d600
                     </div>
                 `;
             }).join('');
-            
-            // Add legend
-            html += `
-                <div style="position: absolute; bottom: -40px; left: 0; right: 0; display: flex; justify-content: center; gap: 20px; font-size: 0.85em;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <div style="width: 14px; height: 14px; background: #26de81; border-radius: 2px;"></div>
-                        <span>↑ Abertos (1-2)</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <div style="width: 14px; height: 14px; background: #ffa502; border-radius: 2px;"></div>
-                        <span>↑ Abertos (3-5)</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <div style="width: 14px; height: 14px; background: #ff4757; border-radius: 2px;"></div>
-                        <span>↑ Abertos (6+)</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <div style="width: 14px; height: 14px; background: #667eea; border-radius: 2px;"></div>
-                        <span>↓ Resolvidos</span>
-                    </div>
-                </div>
-            `;
             
             chart.innerHTML = html;
         }
