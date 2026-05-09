@@ -33182,6 +33182,25 @@ thread_id: 59c575b8-18a8-4db5-b6af-1de37c71d600
     </script>
     
     <!-- Firebase Configuration -->
-    <script src="firebase-config.js"></script>
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyChL5ICd7vSH6Fc3irzxYhy_AmNgkFSBeE",
+            authDomain: "gestao-de-testes-vivo.firebaseapp.com",
+            projectId: "gestao-de-testes-vivo",
+            storageBucket: "gestao-de-testes-vivo.firebasestorage.app",
+            messagingSenderId: "682040337333",
+            appId: "1:682040337333:web:81b9f099ff5d638cd2affc"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize Firestore
+        const db = firebase.firestore();
+        const bugsCollection = db.collection('bugs');
+
+        console.log('🔥 Firebase inicializado com sucesso!');
+    </script>
 
 </body></html>
